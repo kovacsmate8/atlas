@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TERMINAL.GLASS // SYSTEM ATLAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:        #000000;
+  --accent:      #00FF88;
+  --accent-g1:   rgba(0,255,136,0.45);
+  --accent-g2:   rgba(0,255,136,0.14);
+  --accent-g3:   rgba(0,255,136,0.04);
+  --red:         #FF2D2D;
+  --orange:      #FF8800;
+  --wire:        rgba(255,255,255,0.55);
+  --wire-dim:    rgba(255,255,255,0.18);
+  --wire-ter:    rgba(255,255,255,0.08);
+  --surface-01:  rgba(0,0,0,0.72);
+  --surface-02:  rgba(0,0,0,0.85);
+  --border-dim:  rgba(255,255,255,0.09);
+  --border-mid:  rgba(255,255,255,0.18);
+  --t-primary:   rgba(255,255,255,0.93);
+  --t-sec:       rgba(255,255,255,0.52);
+  --t-ter:       rgba(255,255,255,0.26);
+
+  --ease-elastic: cubic-bezier(0.34,1.56,0.64,1);
+  --ease-snap:    cubic-bezier(0.22,1,0.36,1);
+  --ease-precise: cubic-bezier(0.4,0,0.2,1);
+
+  --safe-top:    env(safe-area-inset-top,0px);
+  --safe-bottom: env(safe-area-inset-bottom,0px);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{
+  font-family:'JetBrains Mono',monospace;
+  background:var(--void);
+  color:var(--t-primary);
+  position:relative;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* GRAIN */
+body::before{
+  content:'';position:fixed;inset:0;z-index:900;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:0.02;background-size:200px 200px;
+}
+/* SCANLINES */
+body::after{
+  content:'';position:fixed;inset:0;z-index:899;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);
+}
+
+/* ============================================================
+   STARFIELD CANVAS — full background
+   ============================================================ */
+#starfield{
+  position:fixed;inset:0;
+  width:100%;height:100%;
+  z-index:0;
+}
+
+/* ============================================================
+   SCENE — full viewport overlay composition
+   ============================================================ */
+.scene{
+  position:fixed;inset:0;
+  z-index:10;
+  overflow:hidden;
+}
+
+/* ============================================================
+   BACKGROUND GRID / BLUEPRINT RINGS
+   ============================================================ */
+#ringCanvas{
+  position:absolute;
+  inset:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;
+}
+
+/* ============================================================
+   PATENT HEADER OVERLAY (top left)
+   ============================================================ */
+.patent-header{
+  position:absolute;
+  top:clamp(16px,3vh,32px);
+  left:clamp(16px,3vw,40px);
+  z-index:30;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 0.3s forwards;
+}
+.ph-subtitle{
+  font-size:clamp(0.4375rem,0.8vw,0.5625rem);
+  letter-spacing:0.2em;
+  color:var(--t-ter);
+  text-transform:uppercase;
+  line-height:1.8;
+}
+.ph-title{
+  font-size:clamp(0.5625rem,1vw,0.6875rem);
+  font-weight:700;
+  letter-spacing:0.14em;
+  color:var(--t-sec);
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.ph-no{font-size:0.4375rem;color:var(--t-ter);letter-spacing:0.1em;}
+
+/* ============================================================
+   TOP RIGHT — GRID SYSTEMS TAG
+   ============================================================ */
+.grid-tag{
+  position:absolute;
+  top:clamp(16px,3vh,32px);
+  right:clamp(16px,3vw,40px);
+  z-index:30;text-align:right;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 0.5s forwards;
+}
+.gt-line{
+  font-size:0.4375rem;letter-spacing:0.18em;
+  color:var(--t-ter);text-transform:uppercase;line-height:2;
+}
+.gt-line span{color:var(--accent);}
+
+/* ============================================================
+   GYROSCOPE / ARMILLARY SPHERE — top left area
+   ============================================================ */
+#gyroCanvas{
+  position:absolute;
+  top:clamp(60px,10vh,120px);
+  left:clamp(16px,4vw,80px);
+  width:clamp(180px,28vw,320px);
+  height:clamp(180px,28vw,320px);
+  z-index:20;
+  opacity:0;
+  animation:fade-in 1.2s var(--ease-snap) 0.6s forwards;
+}
+
+/* Patent annotation lines (purely decorative) */
+.patent-lines{
+  position:absolute;
+  top:clamp(60px,10vh,120px);
+  left:clamp(16px,4vw,80px);
+  width:clamp(180px,28vw,320px);
+  height:clamp(180px,28vw,320px);
+  z-index:22;pointer-events:none;
+  opacity:0;
+  animation:fade-in 1.4s var(--ease-snap) 1s forwards;
+}
+.pl-label{
+  position:absolute;
+  font-size:clamp(0.375rem,0.65vw,0.5rem);
+  letter-spacing:0.12em;
+  color:var(--t-sec);
+  font-style:italic;
+}
+
+/* ============================================================
+   SYSTEM MONITOR PANEL — top right
+   ============================================================ */
+.sysmon{
+  position:absolute;
+  top:clamp(56px,9vh,96px);
+  right:clamp(16px,3vw,40px);
+  width:clamp(220px,28vw,320px);
+  z-index:30;
+  background:var(--surface-01);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border-dim);
+  border-top:1px solid rgba(0,255,136,0.25);
+  padding:12px;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 0.8s forwards;
+}
+.sysmon-host{
+  font-size:0.5625rem;font-weight:700;letter-spacing:0.12em;
+  color:var(--t-primary);margin-bottom:8px;
+  border-bottom:1px solid var(--border-dim);padding-bottom:6px;
+}
+.sysmon-host span{color:var(--accent);}
+.sm-row{
+  display:flex;justify-content:space-between;
+  font-size:0.4375rem;letter-spacing:0.08em;
+  padding:2px 0;color:var(--t-sec);line-height:1.7;
+}
+.sm-row .k{color:var(--t-ter);min-width:120px;}
+.sm-row .v{color:var(--t-primary);text-align:right;}
+.sm-row .vg{color:var(--accent);}
+.sm-row .vr{color:var(--red);}
+.sm-sep{height:1px;background:var(--border-dim);margin:6px 0;}
+
+/* Mini bar */
+.sm-bar{
+  display:inline-flex;align-items:center;gap:4px;
+  vertical-align:middle;
+}
+.sm-bar-track{
+  width:40px;height:3px;background:rgba(255,255,255,0.08);
+  display:inline-block;position:relative;overflow:hidden;
+}
+.sm-bar-fill{
+  position:absolute;top:0;left:0;height:100%;
+  background:var(--accent);
+  box-shadow:0 0 4px var(--accent-g1);
+  animation:bar-in 1.2s var(--ease-snap) 1.2s both;
+  transform:scaleX(0);transform-origin:left;
+}
+@keyframes bar-in{to{transform:scaleX(1);}}
+.sm-bar-fill.red-fill{background:var(--red);box-shadow:0 0 4px rgba(255,45,45,0.5);}
+
+/* Process table */
+.proc-table{width:100%;border-collapse:collapse;margin-top:4px;}
+.proc-table th{
+  font-size:0.375rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--t-ter);padding:2px 4px 4px 0;text-align:left;
+  border-bottom:1px solid var(--border-dim);
+}
+.proc-table td{
+  font-size:0.4375rem;letter-spacing:0.06em;
+  padding:2px 4px 2px 0;color:var(--t-sec);
+  border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.proc-table td:first-child{color:var(--t-primary);}
+.proc-table .hi{color:var(--red);}
+.proc-table .med{color:var(--orange);}
+
+/* ============================================================
+   FIG. LABELS
+   ============================================================ */
+.fig-label{
+  position:absolute;z-index:25;
+  font-size:clamp(0.4375rem,0.8vw,0.5625rem);
+  letter-spacing:0.14em;
+  color:var(--t-sec);
+  font-style:italic;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 1.2s forwards;
+}
+.fig-label span{font-style:normal;color:var(--t-ter);}
+
+/* ============================================================
+   CENTRAL ALERT TEXT
+   ============================================================ */
+.alert-text{
+  position:absolute;
+  left:50%;
+  top:55%;
+  transform:translate(-50%,-50%);
+  z-index:35;
+  text-align:center;
+  white-space:nowrap;
+  opacity:0;
+  animation:emerge 1.4s var(--ease-snap) 1.4s forwards;
+}
+.at-main{
+  font-size:clamp(1.5rem,5vw,3.5rem);
+  font-weight:700;
+  letter-spacing:0.04em;
+  color:var(--t-primary);
+  font-style:italic;
+  line-height:1;
+  text-shadow:
+    0 0 60px rgba(255,255,255,0.08),
+    0 0 120px rgba(255,255,255,0.04);
+  animation:text-drift 12s ease-in-out infinite 2s;
+}
+.at-main em{
+  font-style:normal;
+  color:var(--accent);
+  text-shadow:
+    0 0 40px var(--accent-g1),
+    0 0 80px var(--accent-g2);
+  animation:flicker-accent 8s ease-in-out infinite 3s;
+}
+@keyframes flicker-accent{
+  0%,90%,100%{opacity:1;}
+  92%{opacity:0.7;}
+  94%{opacity:1;}
+  96%{opacity:0.85;}
+}
+@keyframes text-drift{
+  0%,100%{letter-spacing:0.04em;}
+  50%{letter-spacing:0.06em;}
+}
+.at-sub{
+  font-size:clamp(0.4375rem,0.9vw,0.625rem);
+  letter-spacing:0.28em;
+  color:var(--t-ter);
+  text-transform:uppercase;
+  margin-top:8px;
+}
+@keyframes emerge{
+  from{opacity:0;transform:translate(-50%,-46%);}
+  to{opacity:1;transform:translate(-50%,-50%);}
+}
+
+/* ============================================================
+   WIREFRAME SPHERE + RING — bottom right
+   ============================================================ */
+#sphereCanvas{
+  position:absolute;
+  bottom:clamp(40px,8vh,100px);
+  right:clamp(16px,6vw,120px);
+  width:clamp(140px,22vw,240px);
+  height:clamp(140px,22vw,240px);
+  z-index:20;
+  opacity:0;
+  animation:fade-in 1.4s var(--ease-snap) 1.6s forwards;
+}
+
+/* ============================================================
+   COORDINATE READOUT — bottom right
+   ============================================================ */
+.coord-panel{
+  position:absolute;
+  bottom:clamp(16px,3vh,32px);
+  right:clamp(16px,3vw,40px);
+  z-index:30;text-align:right;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 2s forwards;
+}
+.cp-line{
+  font-size:clamp(0.375rem,0.7vw,0.5rem);
+  letter-spacing:0.12em;
+  color:var(--t-ter);
+  line-height:1.9;
+}
+.cp-line span{color:var(--t-sec);}
+.cp-line .hl{color:var(--accent);}
+.cp-copyright{
+  font-size:0.375rem;color:var(--t-ter);
+  margin-top:6px;letter-spacing:0.1em;
+}
+
+/* ============================================================
+   BOTTOM LEFT — DREAMWORKS DATA PANEL
+   ============================================================ */
+.data-panel{
+  position:absolute;
+  bottom:clamp(40px,7vh,80px);
+  left:clamp(16px,3vw,40px);
+  z-index:30;
+  width:clamp(220px,30vw,340px);
+  opacity:0;
+  animation:fade-in 1.2s var(--ease-snap) 1.8s forwards;
+}
+.dp-tag{
+  font-size:0.5rem;font-weight:700;letter-spacing:0.22em;
+  color:var(--t-ter);text-transform:uppercase;margin-bottom:6px;
+}
+.dp-stats{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  border:1px solid var(--border-dim);
+  border-bottom:none;
+  background:var(--surface-01);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.dp-stat-head{
+  font-size:0.3125rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--t-ter);padding:4px 4px 2px;
+  border-right:1px solid var(--border-dim);
+  border-bottom:1px solid var(--border-dim);
+  line-height:1.4;
+}
+.dp-stat-head:last-child{border-right:none;}
+.dp-stat-val{
+  font-size:0.4375rem;letter-spacing:0.06em;
+  color:var(--t-sec);padding:4px 4px 4px;
+  border-right:1px solid var(--border-dim);
+  border-bottom:1px solid var(--border-dim);
+}
+.dp-stat-val:last-child{border-right:none;}
+.dp-stat-val.green{color:var(--accent);}
+.dp-stat-val.red{color:var(--red);}
+
+.dp-text{
+  border:1px solid var(--border-dim);
+  border-top:none;
+  padding:6px 8px;
+  background:var(--surface-01);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  font-size:0.375rem;line-height:1.9;
+  color:var(--t-sec);letter-spacing:0.04em;
+}
+
+/* Box office */
+.dp-boxoffice{
+  margin-top:6px;
+  font-size:0.375rem;letter-spacing:0.1em;
+  color:var(--t-ter);line-height:2;
+}
+.dp-boxoffice span{color:var(--accent);}
+
+/* ============================================================
+   MERIDIAN COORDINATE GRID — bottom center
+   ============================================================ */
+.coord-axis{
+  position:absolute;
+  bottom:clamp(8px,1.5vh,16px);
+  left:50%;
+  transform:translateX(-50%);
+  z-index:25;
+  display:flex;gap:clamp(8px,2vw,24px);
+  align-items:center;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 2.2s forwards;
+}
+.ca-tick{
+  font-size:clamp(0.3125rem,0.6vw,0.4375rem);
+  letter-spacing:0.1em;
+  color:var(--t-ter);
+  text-align:center;
+}
+.ca-tick::before{
+  content:'';display:block;width:1px;height:8px;
+  background:rgba(255,255,255,0.15);margin:0 auto 4px;
+}
+.ca-zero{color:var(--t-sec);}
+
+/* ============================================================
+   HERMIONE LABEL (right mid)
+   ============================================================ */
+.hermione-label{
+  position:absolute;
+  right:clamp(16px,3vw,40px);
+  bottom:clamp(200px,34vh,360px);
+  z-index:30;text-align:right;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 1.8s forwards;
+}
+.hl-name{
+  font-size:clamp(0.75rem,1.5vw,1rem);
+  font-weight:700;letter-spacing:0.12em;
+  color:var(--t-primary);font-style:italic;
+}
+.hl-date{
+  font-size:0.4375rem;letter-spacing:0.14em;
+  color:var(--t-ter);line-height:2;
+}
+
+/* ============================================================
+   CTA ROW — center bottom
+   ============================================================ */
+.cta-row{
+  position:absolute;
+  left:50%;
+  bottom:clamp(40px,6vh,64px);
+  transform:translateX(-50%);
+  z-index:40;
+  display:flex;align-items:center;gap:16px;
+  opacity:0;
+  animation:fade-in 1s var(--ease-snap) 2.4s forwards;
+  white-space:nowrap;
+}
+.btn-primary{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.625rem;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--void);background:var(--accent);border:none;
+  padding:10px 24px;min-height:44px;cursor:pointer;
+  clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+  box-shadow:0 0 32px var(--accent-g1),0 0 64px var(--accent-g2);
+  transition:transform var(--ease-elastic) 220ms,box-shadow var(--ease-precise) 220ms;
+  will-change:transform;
+}
+.btn-primary:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 48px var(--accent-g1),0 0 96px var(--accent-g2),0 8px 24px rgba(0,255,136,0.2);}
+.btn-primary:active{transform:scale(0.98);}
+.btn-primary:focus-visible{outline:1px solid var(--accent);outline-offset:4px;}
+
+.btn-secondary{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.625rem;font-weight:400;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--t-sec);background:transparent;
+  border:1px solid rgba(255,255,255,0.14);
+  padding:10px 24px;min-height:44px;cursor:pointer;
+  transition:color var(--ease-precise) 150ms,border-color var(--ease-precise) 150ms,transform var(--ease-elastic) 200ms,box-shadow var(--ease-precise) 150ms;
+  will-change:transform;
+}
+.btn-secondary:hover{color:var(--accent);border-color:rgba(0,255,136,0.35);transform:translateY(-1px);box-shadow:0 0 24px var(--accent-g2),inset 0 0 20px var(--accent-g3);}
+.btn-secondary:active{transform:scale(0.98);}
+.btn-secondary:focus-visible{outline:1px solid var(--accent);outline-offset:4px;}
+
+/* ============================================================
+   GLOBAL ANIMATIONS
+   ============================================================ */
+@keyframes fade-in{from{opacity:0;}to{opacity:1;}}
+
+/* N compass label */
+.compass-n{
+  position:absolute;z-index:25;
+  font-size:0.5rem;letter-spacing:0.18em;font-weight:700;
+  color:var(--t-sec);
+  opacity:0;animation:fade-in 1s var(--ease-snap) 2s forwards;
+}
+
+/* Handwriting overlay */
+.handwriting{
+  position:absolute;z-index:22;
+  font-style:italic;
+  color:rgba(255,255,255,0.12);
+  letter-spacing:0.06em;
+  pointer-events:none;
+  line-height:1.5;
+  font-size:clamp(0.4375rem,1vw,0.625rem);
+  opacity:0;
+  animation:fade-in 2s var(--ease-snap) 1.8s forwards;
+}
+
+@media(max-width:768px){
+  .data-panel{display:none;}
+  .sysmon{width:clamp(180px,90vw,280px);right:8px;}
+  .at-main{font-size:clamp(1.25rem,7vw,2rem);}
+  .hermione-label{display:none;}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- STARFIELD -->
+<canvas id="starfield"></canvas>
+
+<!-- SCENE -->
+<div class="scene" role="main">
+
+  <!-- RING / BLUEPRINT CANVAS -->
+  <canvas id="ringCanvas" aria-hidden="true"></canvas>
+
+  <!-- PATENT HEADER -->
+  <div class="patent-header" role="complementary" aria-label="Patent reference overlay">
+    <div class="ph-no">No. 11,475. &nbsp;&nbsp;&nbsp; Reissued Feb. 26, 1895.</div>
+    <div class="ph-title">W. H. BEEHLER.</div>
+    <div class="ph-subtitle">INSTRUMENT FOR TAKING NAUTICAL OBSERVATIONS.<br>5 Sheets — Sheet 4</div>
+    <div style="margin-top:8px;">
+      <div class="ph-no" style="font-style:italic;color:rgba(255,255,255,0.18);">Fig. 5.</div>
+    </div>
+  </div>
+
+  <!-- TOP RIGHT GRID TAG -->
+  <div class="grid-tag" aria-hidden="true">
+    <div class="gt-line">GRID SYSTEMS &nbsp;&nbsp;&nbsp;&nbsp; IMAGE BASED &nbsp; <span>: 04</span></div>
+    <div class="gt-line">SUB CATEGORY &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span>04.05</span></div>
+    <div class="gt-line">OBJECT &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A</div>
+    <div class="gt-line">02 ............. SINGLE LAYER <span>[2D]</span></div>
+  </div>
+
+  <!-- GYROSCOPE CANVAS -->
+  <canvas id="gyroCanvas" aria-label="Animated armillary sphere wireframe"></canvas>
+
+  <!-- PATENT LABELS -->
+  <div class="patent-lines" aria-hidden="true">
+    <div class="pl-label" style="top:5%;left:60%;">H</div>
+    <div class="pl-label" style="top:8%;left:72%;">U</div>
+    <div class="pl-label" style="top:12%;right:5%;">A</div>
+    <div class="pl-label" style="top:28%;left:4%;">Z</div>
+    <div class="pl-label" style="bottom:12%;left:8%;">B</div>
+    <div class="pl-label" style="bottom:5%;right:12%;">C</div>
+  </div>
+
+  <!-- FIG LABELS -->
+  <div class="fig-label" style="top:clamp(260px,42%,480px);left:clamp(16px,4vw,56px);" aria-hidden="true">
+    <em>Fig.</em> 6.
+  </div>
+  <div class="fig-label" style="top:clamp(260px,42%,480px);left:clamp(140px,24vw,280px);" aria-hidden="true">
+    <em>Fig.</em> 7.
+    <div style="font-size:0.375rem;margin-top:2px;font-style:normal;color:var(--t-ter);">Inventor<br><span style="font-style:italic;opacity:.6;">William H. Beehler</span></div>
+  </div>
+
+  <!-- SYSTEM MONITOR -->
+  <aside class="sysmon" role="complementary" aria-label="System monitor readout">
+    <div class="sysmon-host">localdomain <span>— L1</span></div>
+
+    <div class="sm-row"><span class="k">Uptime:</span><span class="v vg">8h 44m 4s</span></div>
+    <div class="sm-row"><span class="k">Frequency (in MHz):</span><span class="v">2001</span></div>
+    <div class="sm-row"><span class="k">Frequency (in GHz):</span><span class="v">2.00</span></div>
+    <div class="sm-row">
+      <span class="k">RAM Usage:</span>
+      <span class="v">563MiB/1.95GiB
+        <span class="sm-bar"><span class="sm-bar-track"><span class="sm-bar-fill" style="width:28%"></span></span> 28%</span>
+      </span>
+    </div>
+    <div class="sm-row">
+      <span class="k">Swap Usage:</span>
+      <span class="v">0B / 0B &nbsp; No swap
+        <span class="sm-bar"><span class="sm-bar-track"><span class="sm-bar-fill" style="width:0%"></span></span></span>
+      </span>
+    </div>
+    <div class="sm-row">
+      <span class="k">CPU Usage:</span>
+      <span class="v vg">18%
+        <span class="sm-bar"><span class="sm-bar-track"><span class="sm-bar-fill" style="width:18%"></span></span></span>
+      </span>
+    </div>
+    <div class="sm-row"><span class="k">Processes:</span><span class="v">107 &nbsp; Running: <span class="vg">0</span></span></div>
+
+    <div class="sm-sep"></div>
+
+    <div class="sm-row"><span class="k">File systems:</span></div>
+    <div class="sm-row"><span class="k">/</span><span class="v">30.2GiB / 57.8GiB</span></div>
+
+    <div class="sm-sep"></div>
+
+    <div class="sm-row"><span class="k">Networking:</span></div>
+    <div class="sm-row"><span class="k">Up: <span style="color:var(--accent)" id="netUp">0B</span></span><span class="v">Down: <span id="netDown">0B</span></span></div>
+
+    <div class="sm-sep"></div>
+
+    <table class="proc-table" aria-label="Process list">
+      <thead><tr><th>Name</th><th>PID</th><th>CPU%</th><th>MEM%</th></tr></thead>
+      <tbody>
+        <tr><td>.gnome-screenshot</td><td>1543</td><td class="hi">4.57</td><td>0.86</td></tr>
+        <tr><td>Xorg</td><td>582</td><td class="med">3.55</td><td>1.10</td></tr>
+        <tr><td>.firefox</td><td>762</td><td>2.54</td><td class="hi">21.50</td></tr>
+        <tr><td>conky</td><td>1535</td><td>1.02</td><td>0.27</td></tr>
+      </tbody>
+    </table>
+  </aside>
+
+  <!-- CENTRAL ALERT -->
+  <div class="alert-text">
+    <div class="at-main">Emer<em>g</em>ency Early Warnin<em>g</em></div>
+    <div class="at-sub">// SYSTEM ATLAS — ACTIVE MONITORING — DELTA CLEARANCE</div>
+  </div>
+
+  <!-- HANDWRITING -->
+  <div class="handwriting" style="left:clamp(16px,4vw,56px);bottom:clamp(280px,44vh,440px);" aria-hidden="true">
+    <div style="font-size:0.5625rem;opacity:0.5;">Hugo C. Burns</div>
+    <div style="font-size:0.4375rem;opacity:0.35;">Maurice J. Jensen</div>
+  </div>
+  <div class="handwriting" style="left:clamp(140px,22vw,260px);bottom:clamp(260px,41vh,400px);" aria-hidden="true">
+    <div style="font-size:0.4375rem;opacity:0.35;">by Whitman Williams</div>
+    <div style="font-size:0.375rem;opacity:0.25;font-style:italic;">Attorney</div>
+  </div>
+
+  <!-- SPHERE CANVAS -->
+  <canvas id="sphereCanvas" aria-label="Animated wireframe sphere with orbit ring"></canvas>
+
+  <!-- HERMIONE LABEL -->
+  <div class="hermione-label" aria-label="Object designation: Hermione">
+    <div class="hl-name">Hermione</div>
+    <div class="hl-date">18 . 2 . 2004<br>22h 19m 0s UTC</div>
+  </div>
+
+  <!-- N COMPASS -->
+  <div class="compass-n" style="left:50%;bottom:clamp(200px,35vh,320px);transform:translateX(-50%);" aria-hidden="true">N</div>
+
+  <!-- DREAMWORKS DATA PANEL -->
+  <div class="data-panel" aria-label="Financial data panel">
+    <div class="dp-tag">DREAMWORKS</div>
+    <div class="dp-stats">
+      <div class="dp-stat-head">EST.SALES<br>GROWTH</div>
+      <div class="dp-stat-head">EST.EPS<br>GROWTH</div>
+      <div class="dp-stat-head">TOTAL<br>ASSETS</div>
+      <div class="dp-stat-head">TRAILING 12-<br>MONTH SALES</div>
+      <div class="dp-stat-head">1-YR<br>TOTAL RETURN</div>
+
+      <div class="dp-stat-val green">19.8%</div>
+      <div class="dp-stat-val">49.2</div>
+      <div class="dp-stat-val">$2.0B</div>
+      <div class="dp-stat-val">$0.750</div>
+      <div class="dp-stat-val red">−18.1%</div>
+    </div>
+    <div class="dp-text">Kung Fu Panda 2, coming out in March, could be a huge hit in China — the world's No. 2 movie market. The animated sequel, co-produced by Dreamworks and Chinese investors, making it exempt from China's import quotas on foreign films.</div>
+    <div class="dp-boxoffice" style="margin-top:6px;">
+      BOX OFFICE<br>
+      <span>■ = US &amp; Canada</span><br>
+      XX = China
+    </div>
+  </div>
+
+  <!-- COORDINATE AXIS -->
+  <div class="coord-axis" aria-label="Coordinate axis reference">
+    <div class="ca-tick">−3,109</div>
+    <div class="ca-tick">−2,457</div>
+    <div class="ca-tick">−1,234</div>
+    <div class="ca-tick">−620</div>
+    <div class="ca-tick ca-zero">0</div>
+    <div class="ca-tick">375</div>
+    <div class="ca-tick">1,200</div>
+    <div class="ca-tick">2,450</div>
+    <div class="ca-tick">3,789</div>
+  </div>
+
+  <!-- COORD READOUT -->
+  <div class="coord-panel" aria-label="Coordinate readout panel">
+    <div class="cp-line">Sh = <span>−5.4016°</span> &nbsp; −12.4099°</div>
+    <div class="cp-line">λ = <span>−132.6902°</span> &nbsp; 0.23004°</div>
+    <div class="cp-line">φ = <span>−187.6142°</span></div>
+    <div class="cp-line" style="margin-top:4px;"><span class="hl">+0.044 "</span></div>
+    <div class="cp-line" style="margin-top:4px;">Y <span>(unite de R_p)</span></div>
+    <div class="cp-copyright">(C) 1998-2002, EPROC 2.6</div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-row">
+    <button class="btn-primary" aria-label="Initialize system">INITIALIZE SYSTEM</button>
+    <button class="btn-secondary" aria-label="Access archive">ACCESS ARCHIVE</button>
+  </div>
+
+</div><!-- /scene -->
+
+<script>
+'use strict';
+
+// ============================================================
+// STARFIELD
+// ============================================================
+(function(){
+  const c=document.getElementById('starfield');
+  const ctx=c.getContext('2d');
+  let W,H,stars=[];
+
+  function resize(){
+    W=c.width=window.innerWidth;
+    H=c.height=window.innerHeight;
+    stars=[];
+    for(let i=0;i<320;i++){
+      stars.push({
+        x:Math.random()*W, y:Math.random()*H,
+        r:Math.random()*0.9+0.1,
+        a:Math.random()*0.5+0.08,
+        twinkle:Math.random()*Math.PI*2
+      });
+    }
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  let t=0;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    t+=0.008;
+    stars.forEach(s=>{
+      const alpha=s.a*(0.7+0.3*Math.sin(s.twinkle+t));
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${alpha})`;ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ============================================================
+// RING / BLUEPRINT CIRCLES
+// ============================================================
+(function(){
+  const c=document.getElementById('ringCanvas');
+  const ctx=c.getContext('2d');
+  let W,H;
+
+  function resize(){
+    W=c.width=window.innerWidth;
+    H=c.height=window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const cx=W*0.5, cy=H*0.5;
+
+    // Large concentric rings — blueprint style
+    [0.22,0.35,0.46,0.57,0.68,0.8,0.92,1.05].forEach((f,i)=>{
+      const r=Math.min(W,H)*f*0.5;
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(255,255,255,${0.04+i*0.004})`;
+      ctx.lineWidth=0.4;ctx.stroke();
+    });
+
+    // Radial lines (sparse compass lines)
+    for(let a=0;a<360;a+=30){
+      const rad=a*Math.PI/180;
+      const innerR=Math.min(W,H)*0.11;
+      const outerR=Math.min(W,H)*0.53;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(rad)*innerR,cy+Math.sin(rad)*innerR);
+      ctx.lineTo(cx+Math.cos(rad)*outerR,cy+Math.sin(rad)*outerR);
+      ctx.strokeStyle='rgba(255,255,255,0.04)';
+      ctx.lineWidth=0.4;ctx.stroke();
+    }
+
+    // Subtle cross
+    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.4;
+    ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+  }
+  draw();
+  window.addEventListener('resize',draw);
+})();
+
+// ============================================================
+// GYROSCOPE / ARMILLARY SPHERE
+// ============================================================
+(function(){
+  const c=document.getElementById('gyroCanvas');
+  const ctx=c.getContext('2d');
+  const pr=window.devicePixelRatio||1;
+
+  function resize(){
+    const size=c.offsetWidth;
+    c.width=size*pr;c.height=size*pr;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  let rotX=0,rotY=0,rotZ=0;
+
+  function project3D(x,y,z,rx,ry,rz){
+    // Rotate Y
+    let cosY=Math.cos(ry),sinY=Math.sin(ry);
+    let x1=x*cosY+z*sinY, z1=-x*sinY+z*cosY, y1=y;
+    // Rotate X
+    let cosX=Math.cos(rx),sinX=Math.sin(rx);
+    let y2=y1*cosX-z1*sinX, z2=y1*sinX+z1*cosX, x2=x1;
+    // Rotate Z
+    let cosZ=Math.cos(rz),sinZ=Math.sin(rz);
+    let x3=x2*cosZ-y2*sinZ, y3=x2*sinZ+y2*cosZ;
+    return {x:x3,y:y3,z:z2};
+  }
+
+  function drawCircle(R,tilt,spin,color,lw){
+    const pts=[];
+    for(let i=0;i<=72;i++){
+      const a=i/72*Math.PI*2;
+      const x=R*Math.cos(a);
+      const y=0;
+      const z=R*Math.sin(a);
+      // tilt
+      const cosT=Math.cos(tilt),sinT=Math.sin(tilt);
+      const y2=y*cosT-z*sinT,z2=y*sinT+z*cosT;
+      pts.push(project3D(x,y2,z2,rotX,rotY+spin,rotZ));
+    }
+    const W=c.width/pr,H=c.height/pr,cx=W/2,cy=H/2;
+    const scale=W*0.42;
+
+    ctx.beginPath();
+    pts.forEach((p,i)=>{
+      const sx=cx+p.x/R*scale;
+      const sy=cy+p.y/R*scale;
+      i===0?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+    });
+    ctx.strokeStyle=color;ctx.lineWidth=lw*pr;ctx.closePath();ctx.stroke();
+  }
+
+  function drawFrame(){
+    const W=c.width/pr,H=c.height/pr,cx=W/2,cy=H/2;
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.save();ctx.scale(pr,pr);
+
+    // Outer ring (equatorial)
+    drawCircle(1,0,0,'rgba(255,255,255,0.55)',0.8);
+    // Meridian rings
+    drawCircle(1,Math.PI/2,0,'rgba(255,255,255,0.45)',0.7);
+    drawCircle(1,Math.PI/2,Math.PI/3,'rgba(255,255,255,0.35)',0.6);
+    drawCircle(1,Math.PI/2,2*Math.PI/3,'rgba(255,255,255,0.3)',0.5);
+    // Tilted ecliptic
+    drawCircle(1,Math.PI/6,0,'rgba(255,255,255,0.25)',0.5);
+    drawCircle(0.7,Math.PI/4,Math.PI/4,'rgba(255,255,255,0.2)',0.4);
+    // Inner small ring
+    drawCircle(0.3,Math.PI/2,rotY*0.5,'rgba(255,255,255,0.6)',1.0);
+    drawCircle(0.3,0,0,'rgba(0,255,136,0.4)',0.6);
+
+    // Center dot
+    ctx.beginPath();ctx.arc(cx,cy,2.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fill();
+
+    // Axis line
+    ctx.beginPath();
+    const ax=project3D(0,1,0,rotX,rotY,rotZ);
+    const axb=project3D(0,-1,0,rotX,rotY,rotZ);
+    const sc=W*0.42;
+    ctx.moveTo(cx+ax.x*sc,cy+ax.y*sc);
+    ctx.lineTo(cx+axb.x*sc,cy+axb.y*sc);
+    ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=0.6;ctx.stroke();
+
+    ctx.restore();
+
+    rotY+=0.004;
+    rotX+=0.0015;
+    rotZ+=0.001;
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+})();
+
+// ============================================================
+// WIREFRAME SPHERE + ORBIT RING
+// ============================================================
+(function(){
+  const c=document.getElementById('sphereCanvas');
+  const ctx=c.getContext('2d');
+  const pr=window.devicePixelRatio||1;
+  let rot=0;
+
+  function resize(){
+    const size=c.offsetWidth;
+    c.width=size*pr;c.height=size*pr;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+
+  function draw(){
+    const W=c.width/pr,H=c.height/pr;
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.save();ctx.scale(pr,pr);
+    const cx=W/2,cy=H/2,r=W*0.38;
+    rot+=0.006;
+
+    // Latitude wires
+    for(let lat=-75;lat<=75;lat+=15){
+      const phi=(90-lat)*Math.PI/180;
+      const ringR=r*Math.sin(phi);
+      const ringY=cy+r*Math.cos(phi);
+      const depth=Math.sin(phi);
+      ctx.beginPath();
+      for(let lon=0;lon<=360;lon+=4){
+        const theta=(lon+rot*180/Math.PI)*Math.PI/180;
+        const x=cx+ringR*Math.cos(theta);
+        const y=ringY;
+        lon===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle=`rgba(255,255,255,${0.12+depth*0.12})`;
+      ctx.lineWidth=0.5;ctx.stroke();
+    }
+
+    // Longitude wires
+    for(let lon=0;lon<360;lon+=20){
+      ctx.beginPath();
+      for(let lat=-90;lat<=90;lat+=4){
+        const phi=(90-lat)*Math.PI/180;
+        const theta=(lon+rot*180/Math.PI)*Math.PI/180;
+        const x=cx+r*Math.sin(phi)*Math.cos(theta);
+        const y=cy+r*Math.cos(phi);
+        lat===-90?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle='rgba(255,255,255,0.08)';
+      ctx.lineWidth=0.4;ctx.stroke();
+    }
+
+    // Equatorial glow ring (orange, like reference)
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.scale(1,0.28);
+    ctx.beginPath();ctx.arc(0,0,r*1.12,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,120,30,0.7)';
+    ctx.lineWidth=2.5/0.28;ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,r*1.04,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,180,60,0.3)';
+    ctx.lineWidth=1.5/0.28;ctx.stroke();
+    ctx.restore();
+
+    // Teal ring
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.scale(1,0.32);
+    ctx.beginPath();ctx.arc(0,0,r*0.95,0,Math.PI*2);
+    ctx.strokeStyle='rgba(0,200,220,0.5)';
+    ctx.lineWidth=1.5/0.32;ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ============================================================
+// SYSTEM MONITOR — LIVE NET
+// ============================================================
+setInterval(()=>{
+  const up=(Math.random()*2).toFixed(1);
+  const down=(Math.random()*8+1).toFixed(1);
+  const el1=document.getElementById('netUp');
+  const el2=document.getElementById('netDown');
+  if(el1)el1.textContent=up+'KB';
+  if(el2)el2.textContent=down+'KB';
+},2000);
+
+// ============================================================
+// TOUCH HAPTICS
+// ============================================================
+document.querySelectorAll('button').forEach(el=>{
+  el.addEventListener('pointerdown',()=>{
+    if('vibrate' in navigator)navigator.vibrate(6);
+  });
+});
+</script>
+</body>
+</html>
